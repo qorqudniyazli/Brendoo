@@ -198,7 +198,7 @@ public static class GetGoSportProducts
                     var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                     var response = await apiClient.PostAsync(
-                        "http://192.168.10.148:5000/api/stock/add",
+                        "http://69.62.114.202:5000/api/stock/add",
                         content);
 
                     if (response.IsSuccessStatusCode)

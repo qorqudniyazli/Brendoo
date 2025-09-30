@@ -201,7 +201,7 @@ public static class GetZaraProduct
                     using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(2));
 
                     var response = await apiClient.PostAsync(
-                        "http://192.168.10.148:5000/api/stock/add",
+                        "http://69.62.114.202:5000/api/stock/add",
                         content,
                         cts.Token);
 
