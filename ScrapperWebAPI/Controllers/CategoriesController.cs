@@ -11,10 +11,20 @@ namespace ScrapperWebAPI.Controllers;
 public class CategoriesController : ControllerBase
 {
     private readonly HttpClient _httpClient;
+    private readonly IHttpClientFactory httpClientFactory;
 
-    public CategoriesController(HttpClient httpClient)
+    public CategoriesController(HttpClient httpClient, IHttpClientFactory httpClientFactory)
     {
         _httpClient = httpClient;
+        this.httpClientFactory = httpClientFactory;
+    }
+
+    [HttpGet("test")]
+    public async Task<IActionResult> A(string cateogry)
+    {
+        var data = await GetOliviaProducts.GetAllProductsFromCategory(cateogry);
+        return Ok(data);
+
     }
 
     [HttpGet]
@@ -45,6 +55,21 @@ public class CategoriesController : ControllerBase
             else if (store.ToLower() == "zara")
             {
                 var data = await GetZaraCategories.GetAll();
+                foreach (var item in data)
+                {
+                    dataToSend.Add(new
+                    {
+                        name = item.Name,
+                        type = item.Type,
+                        img = item.Img,
+                        store = store
+                    });
+                    categoryNames.Add(item.Name);
+                }
+            }
+            else if (store.ToLower() == "olivia")
+            {
+                var data = await GetOliviaCategories.GetAll(httpClientFactory);
                 foreach (var item in data)
                 {
                     dataToSend.Add(new
