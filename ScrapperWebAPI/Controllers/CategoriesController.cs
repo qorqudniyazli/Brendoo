@@ -159,7 +159,7 @@ public class CategoriesController : ControllerBase
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var response = await _httpClient.PostAsync(
-                "http://69.62.114.202:5000/api/stock/add-category",
+                "http://69.62.114.202:6000/api/stock/add-category",
                 content);
 
             if (response.IsSuccessStatusCode)

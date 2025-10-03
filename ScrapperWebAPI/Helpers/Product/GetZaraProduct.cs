@@ -172,7 +172,7 @@ public static class GetZaraProduct
             {
                 name = product.Name ?? "Mehsul",
                 brand = product.Brand ?? "ZARA",
-                price = product.Price,
+                price = product.Price/100,
                 productUrl = product.ProductUrl ?? "",
                 discountedPrice = product.DiscountedPrice,
                 description = !string.IsNullOrEmpty(product.Description) && product.Description.Length > 150
@@ -201,7 +201,7 @@ public static class GetZaraProduct
                     using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(2));
 
                     var response = await apiClient.PostAsync(
-                        "http://69.62.114.202:5000/api/stock/add",
+                        "http://69.62.114.202:6000/api/stock/add",
                         content,
                         cts.Token);
 
