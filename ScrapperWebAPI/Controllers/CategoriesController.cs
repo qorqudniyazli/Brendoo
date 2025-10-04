@@ -135,6 +135,11 @@ public class CategoriesController : ControllerBase
                     var products = await GetZaraProduct.GetByCategoryName(categoryName);
                     Console.WriteLine(categoryName + ": " + (products?.Count ?? 0) + " mehsul");
                 }
+                else if (store.ToLower() == "olivia")
+                {
+                    var products = await GetOliviaProducts.GetAllProductsFromCategory(categoryName);
+                    Console.WriteLine(categoryName + ": " + (products?.Count ?? 0) + " mehsul");
+                }
 
                 Console.WriteLine("[" + (i + 1) + "/" + categoryNames.Count + "] " + categoryName + " tamamlandi");
 

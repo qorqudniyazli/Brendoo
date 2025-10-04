@@ -1,5 +1,7 @@
 ﻿using HtmlAgilityPack;
 using ScrapperWebAPI.Models.ProductDtos;
+using Newtonsoft.Json;
+using System.Text;
 
 namespace ScrapperWebAPI.Helpers.Product
 {
@@ -193,7 +195,6 @@ namespace ScrapperWebAPI.Helpers.Product
 
         public static async Task<List<ProductToListDto>> GetAllProductsFromCategory(string categoryName)
         {
-            // Category helper-dən URL-i əldə et
             var categoryUrl = await GetOliviaCategories.GetCategoryUrl(categoryName);
 
             if (string.IsNullOrEmpty(categoryUrl))
@@ -201,6 +202,14 @@ namespace ScrapperWebAPI.Helpers.Product
 
             var productUrls = await GetProductUrls(categoryUrl);
             var products = new List<ProductDto>();
+
+            // API client-i yaradırıq
+            using var apiClient = new HttpClient()
+            {
+                Timeout = TimeSpan.FromMinutes(10)
+            };
+
+            int processedCount = 0;
 
             foreach (var url in productUrls)
             {
@@ -210,19 +219,115 @@ namespace ScrapperWebAPI.Helpers.Product
                     if (product != null)
                     {
                         products.Add(product);
+
+                        // Map edirik və API-ya göndəririk
+                        var mappedProduct = MapToDto(product);
+                        if (mappedProduct != null)
+                        {
+                            await SendSingleProductToExternalAPI(mappedProduct, categoryName, processedCount, apiClient);
+                            processedCount++;
+                        }
                     }
                     await Task.Delay(300);
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Skip failed products
+                    Console.WriteLine($"OLIVIA MEHSUL XETA: {ex.Message}");
                 }
             }
 
             return MapToDtoList(products);
         }
 
-        // Mapper metodları
+        private static async Task SendSingleProductToExternalAPI(ProductToListDto product, string category, int productNumber, HttpClient apiClient)
+        {
+            try
+            {
+                var sizes = new List<object>();
+                if (product.Sizes != null)
+                {
+                    foreach (var size in product.Sizes)
+                    {
+                        sizes.Add(new { sizeName = size.SizeName, onStock = size.OnStock });
+                    }
+                }
+
+                var colors = new List<object>();
+                if (product.Colors != null)
+                {
+                    foreach (var color in product.Colors)
+                    {
+                        colors.Add(new { name = color.Name, hex = color.Hex });
+                    }
+                }
+
+                var productData = new
+                {
+                    name = product.Name ?? "",
+                    brand = product.Brand ?? "",
+                    price = product.Price,
+                    productUrl = product.ProductUrl,
+                    discountedPrice = product.DiscountedPrice,
+                    description = !string.IsNullOrEmpty(product.Description) && product.Description.Length > 150
+                        ? product.Description.Substring(0, 150) + "..."
+                        : product.Description ?? "",
+                    images = product.ImageUrl ?? new List<string>(),
+                    sizes = sizes.Take(1),
+                    colors = colors,
+                    store = "olivia",
+                    category = category,
+                    processedAt = DateTime.Now.ToString("HH:mm:ss")
+                };
+
+                const int maxRetries = 3;
+                bool success = false;
+
+                for (int retry = 0; retry < maxRetries && !success; retry++)
+                {
+                    try
+                    {
+                        var json = JsonConvert.SerializeObject(productData);
+                        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                        var response = await apiClient.PostAsync(
+                            "http://69.62.114.202/api/stock/add",
+                            content);
+
+                        if (response.IsSuccessStatusCode)
+                        {
+                            Console.WriteLine($"OLIVIA: {category} - {product.Name} gonderildi");
+                            success = true;
+                        }
+                        else
+                        {
+                            if (retry < maxRetries - 1)
+                            {
+                                await Task.Delay(TimeSpan.FromSeconds(5 * (retry + 1)));
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        if (retry < maxRetries - 1)
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(5 * (retry + 1)));
+                        }
+                    }
+                }
+
+                if (!success)
+                {
+                    Console.WriteLine($"OLIVIA: {category} - {product.Name} ATILDI");
+                }
+
+                await Task.Delay(500);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"OLIVIA SendSingleProduct xetasi: {ex.Message}");
+            }
+        }
+
         public static ProductToListDto MapToDto(ProductDto oliviaProduct)
         {
             if (oliviaProduct == null)
