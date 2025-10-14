@@ -1,15 +1,16 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using ScrapperWebAPI.Helpers.Mappers;
+using ScrapperWebAPI.Models.BershkaModels;
+using ScrapperWebAPI.Models.ProductDtos;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using ScrapperWebAPI.Helpers.Mappers;
-using ScrapperWebAPI.Models.BershkaModels;
-using ScrapperWebAPI.Models.ProductDtos;
 
 namespace ScrapperWebAPI.Helpers.Product
 {
@@ -216,31 +217,49 @@ namespace ScrapperWebAPI.Helpers.Product
         private static async Task SendProductsToAPI(List<ProductToListDto> products, string sourceUrl)
         {
             if (products == null || products.Count == 0)
+            {
+                Console.WriteLine("BERSHKA API: Məhsul yoxdur, API çağırılmadı");
                 return;
+            }
+
+            int totalProducts = products.Count;
+            int sentCount = 0;
+            int errorCount = 0;
 
             try
             {
                 using var apiClient = new HttpClient { Timeout = TimeSpan.FromMinutes(2) };
 
-                foreach (var product in products)
+                for (int i = 0; i < products.Count; i++)
                 {
+                    var product = products[i];
+
                     try
                     {
-                        var sizes = product.Sizes?.Select(s => new
+                        // Məhsul məlumatlarını hazırla
+                        List<object> sizes = new List<object>();
+                        if (product.Sizes != null)
                         {
-                            sizeName = s.SizeName ?? "",
-                            onStock = s.OnStock
-                        }).ToList();
+                            sizes = product.Sizes.Select(s => (object)new
+                            {
+                                sizeName = s.SizeName ?? "",
+                                onStock = s.OnStock
+                            }).ToList();
+                        }
 
-                        var colors = product.Colors?.Select(c => new
+                        List<object> colors = new List<object>();
+                        if (product.Colors != null)
                         {
-                            name = c.Name ?? "",
-                            hex = c.Hex ?? ""
-                        }).ToList();
+                            colors = product.Colors.Select(c => (object)new
+                            {
+                                name = c.Name ?? "",
+                                hex = c.Hex ?? ""
+                            }).ToList();
+                        }
 
                         var productData = new
                         {
-                            name = product.Name ?? "",
+                            name = product.Name ?? "Məhsul",
                             brand = product.Brand ?? "Bershka",
                             price = product.Price / 100,
                             productUrl = product.ProductUrl ?? "",
@@ -254,32 +273,85 @@ namespace ScrapperWebAPI.Helpers.Product
                             processedAt = DateTime.Now.ToString("HH:mm:ss")
                         };
 
-                        var json = JsonConvert.SerializeObject(productData);
-                        var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                        var response = await apiClient.PostAsync(
-                            "http://69.62.114.202/api/stock/add",
-                            content);
-
-                        if (!response.IsSuccessStatusCode)
+                        // Retry mexanizmi
+                        bool success = false;
+                        for (int attempt = 1; attempt <= 3 && !success; attempt++)
                         {
-                            Console.WriteLine($"BERSHKA API xeta: {product.Name} - {response.StatusCode}");
+                            try
+                            {
+                                var json = JsonConvert.SerializeObject(productData);
+                                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                                var response = await apiClient.PostAsync(
+                                    "http://69.62.114.202/api/stock/add",
+                                    content);
+
+                                if (response.IsSuccessStatusCode)
+                                {
+                                    sentCount++;
+                                    success = true;
+
+                                    if ((i + 1) % 10 == 0)
+                                    {
+                                        Console.WriteLine($"BERSHKA API: [{i + 1}/{totalProducts}] göndərildi (Uğurlu={sentCount}, Xəta={errorCount})");
+                                    }
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"BERSHKA API xəta: {product.Name} - HTTP {response.StatusCode} (Cəhd {attempt}/3)");
+
+                                    if (attempt < 3)
+                                    {
+                                        await Task.Delay(2000 * attempt); // Artan gecikmə
+                                    }
+                                }
+                            }
+                            catch (TaskCanceledException)
+                            {
+                                Console.WriteLine($"BERSHKA API timeout: {product.Name} (Cəhd {attempt}/3)");
+
+                                if (attempt < 3)
+                                {
+                                    await Task.Delay(3000 * attempt);
+                                }
+                            }
+                            catch (HttpRequestException ex)
+                            {
+                                Console.WriteLine($"BERSHKA API HTTP xəta: {product.Name} - {ex.Message} (Cəhd {attempt}/3)");
+
+                                if (attempt < 3)
+                                {
+                                    await Task.Delay(2000 * attempt);
+                                }
+                            }
                         }
 
+                        if (!success)
+                        {
+                            errorCount++;
+                            Console.WriteLine($"BERSHKA API: {product.Name} ATILDI (bütün cəhdlər uğursuz)");
+                        }
+
+                        // Hər məhsul arasında kiçik gecikmə
                         await Task.Delay(200);
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"BERSHKA API xeta: {product.Name} - {ex.Message}");
+                        errorCount++;
+                        Console.WriteLine($"BERSHKA API xəta: {product.Name} - {ex.Message} - DAVAM EDİR");
+                        continue; // Növbəti məhsula keç
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"BERSHKA API kritik xeta: {ex.Message}");
+                Console.WriteLine($"BERSHKA API kritik xəta: {ex.Message} - Göndərilən: {sentCount}/{totalProducts}");
             }
+
+            Console.WriteLine($"BERSHKA API NƏTİCƏ: Cəmi={totalProducts}, Göndərilən={sentCount}, Xəta={errorCount}");
         }
 
+        
         private static async Task WarmupConnection()
         {
             try
