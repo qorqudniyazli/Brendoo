@@ -82,6 +82,17 @@ public class CategoriesController : ControllerBase
                     categoryNames.Add(item.Name);
                 }
             }
+            else if (store.ToLower() == "bershka")
+            { 
+                categoryNames = await GetBreshkaCategories.GetAllCategoryLinks();
+                dataToSend.Add(new
+                {
+                    name = "test",
+                    type = "test",
+                    img = "test",
+                    store = store
+                });
+            }
             else
             {
                 return BadRequest("Store not found");
@@ -142,11 +153,9 @@ public class CategoriesController : ControllerBase
                 }
                 else if (store.ToLower() == "bershka")
                 {
-                    var links = GetBreshkaCategories.GetAllCategoryLinks();
-                    //foreach (var link in links)
-                    //{
-
-                    //}
+                    
+                    var data = await GetBershkaProducts.FetchProductsAsync(categoryNames);
+                    break;
                 }
 
                 Console.WriteLine("[" + (i + 1) + "/" + categoryNames.Count + "] " + categoryName + " tamamlandi");
