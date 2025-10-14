@@ -140,14 +140,14 @@
 
     public class Hotpoint
     {
-        public int top { get; set; }
-        public int left { get; set; }
+        public decimal top { get; set; }        // int əvəzinə decimal
+        public decimal left { get; set; }       // int əvəzinə decimal
         public string viewport { get; set; }
         public List<object> freePositionAlign { get; set; }
-        public int width { get; set; }
+        public decimal width { get; set; }      // int əvəzinə decimal
         public string attribute { get; set; }
         public RawData rawData { get; set; }
-        public int height { get; set; }
+        public decimal height { get; set; }     // int əvəzinə decimal
     }
 
     public class Location
@@ -189,7 +189,7 @@
         public int id { get; set; }
         public string name { get; set; }
     }
-
+    
     public class Purchaser
     {
         public string level { get; set; }
@@ -199,14 +199,14 @@
     public class RawData
     {
         public string textOrientation { get; set; }
-        public int referenceWidth { get; set; }
-        public int referenceHeight { get; set; }
-        public int top { get; set; }
-        public int left { get; set; }
-        public int rotation { get; set; }
-        public int width { get; set; }
+        public decimal referenceWidth { get; set; }   // int → decimal
+        public decimal referenceHeight { get; set; }  // int → decimal
+        public decimal top { get; set; }              // int → decimal
+        public decimal left { get; set; }             // int → decimal
+        public decimal rotation { get; set; }         // int → decimal
+        public decimal width { get; set; }            // int → decimal
         public string align { get; set; }
-        public int height { get; set; }
+        public decimal height { get; set; }           // int → decimal
         public string writingMode { get; set; }
     }
 
