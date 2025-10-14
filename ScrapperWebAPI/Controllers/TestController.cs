@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ScrapperWebAPI.Helpers;
+using ScrapperWebAPI.Helpers.Product;
 using System.Threading.Tasks;
 
 namespace ScrapperWebAPI.Controllers
@@ -14,7 +15,10 @@ namespace ScrapperWebAPI.Controllers
         [HttpGet("CategoryIds")]
         public async Task<IActionResult> catid()
         {
-            var data = await GetBreshkaCategories.GetAllCategoryLinks();
+            var categoryNames = await GetBreshkaCategories.GetAllCategoryLinks();
+
+            var data = await GetBershkaProducts.FetchProductsAsync(categoryNames);
+
             return Ok(data);
         }
     }
