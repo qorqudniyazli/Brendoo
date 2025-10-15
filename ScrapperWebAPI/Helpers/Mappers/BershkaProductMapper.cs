@@ -19,7 +19,6 @@ namespace ScrapperWebAPI.Helpers.Mappers
             {
                 try
                 {
-                    // Null check
                     if (product?.bundleProductSummaries == null ||
                         product.bundleProductSummaries.Count == 0 ||
                         product.bundleProductSummaries[0]?.detail == null)
@@ -36,92 +35,112 @@ namespace ScrapperWebAPI.Helpers.Mappers
                         continue;
                     }
 
-                    var firstColor = detail.colors[0];
-
-                    if (firstColor.sizes == null || firstColor.sizes.Count == 0)
+                    // ✅ HƏR RƏNG ÜÇÜN 1 DƏFƏ (index ilə)
+                    for (int i = 0; i < detail.colors.Count; i++)
                     {
-                        Console.WriteLine($"BERSHKA MAPPER: {product.name} - Ölçü yoxdur");
-                        continue;
-                    }
+                        var color = detail.colors[i];
 
-                    var mappedProduct = new ProductToListDto
-                    {
-                        Name = product.name ?? "Unknown",
-                        Brand = "Bershka",
-                        Price = 0, // Default
-                        Sizes = new List<Sizes>(),
-                        Colors = new List<ScrapperWebAPI.Models.ProductDtos.Color>(),
-                        Description = detail.description ?? "",
-                        ProductUrl = "https://www.bershka.com/az/" +
-                                   (product.bundleProductSummaries[0].productUrl ?? "") +
-                                   ".html?colorId=800",
-                        ImageUrl = new List<string>()
-                    };
-
-                    // Qiymət
-                    try
-                    {
-                        if (!string.IsNullOrEmpty(firstColor.sizes[0].price))
+                        if (color?.sizes == null || color.sizes.Count == 0)
                         {
-                            mappedProduct.Price = decimal.Parse(firstColor.sizes[0].price);
+                            Console.WriteLine($"BERSHKA MAPPER: {product.name} - {color?.name} üçün ölçü yoxdur");
+                            continue;
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"BERSHKA MAPPER: Qiymət xətası {product.name} - {ex.Message}");
-                    }
 
-                    // Rəng
-                    if (!string.IsNullOrEmpty(firstColor.name))
-                    {
-                        mappedProduct.Colors.Add(new ScrapperWebAPI.Models.ProductDtos.Color
+                        // ✅ BU RƏNGƏ AID colorCode tap
+                        string colorCode = "800"; // default
+
+                        // xmedia və colors eyni sırada olmalıdır
+                        if (detail.xmedia != null && i < detail.xmedia.Count)
                         {
-                            Name = firstColor.name,
-                            Hex = ""
-                        });
-                    }
+                            colorCode = detail.xmedia[i].colorCode ?? colorCode;
+                        }
 
-                    // Şəkillər
-                    try
-                    {
-                        if (detail.xmedia != null &&
-                            detail.xmedia.Count > 0 &&
-                            detail.xmedia[0].xmediaItems != null &&
-                            detail.xmedia[0].xmediaItems.Count > 0)
+                        var mappedProduct = new ProductToListDto
                         {
-                            var medias = detail.xmedia[0].xmediaItems[0].medias;
+                            Name = product.name ?? "Unknown",
+                            Brand = "Bershka",
+                            Price = 0,
+                            Sizes = new List<Sizes>(),
+                            Colors = new List<ScrapperWebAPI.Models.ProductDtos.Color>(),
+                            Description = detail.description ?? "",
 
-                            if (medias != null)
+                            // ✅ HƏR RƏNGƏ AID FƏRQLI URL
+                            ProductUrl = "https://www.bershka.com/az/" +
+                                       (product.bundleProductSummaries[0].productUrl ?? "") +
+                                       $".html?colorId={colorCode}",
+
+                            ImageUrl = new List<string>()
+                        };
+
+                        // Qiymət
+                        try
+                        {
+                            if (!string.IsNullOrEmpty(color.sizes[0].price))
                             {
-                                foreach (var media in medias)
+                                mappedProduct.Price = decimal.Parse(color.sizes[0].price);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"BERSHKA MAPPER: Qiymət xətası {product.name} - {ex.Message}");
+                        }
+
+                        // ✅ YALNIZ BU RƏNGI əlavə et
+                        if (!string.IsNullOrEmpty(color.name))
+                        {
+                            mappedProduct.Colors.Add(new ScrapperWebAPI.Models.ProductDtos.Color
+                            {
+                                Name = color.name,
+                                Hex = ""
+                            });
+                        }
+
+                        // ✅ BU RƏNGƏ AID şəkillər
+                        try
+                        {
+                            if (detail.xmedia != null && i < detail.xmedia.Count)
+                            {
+                                var colorXmedia = detail.xmedia[i];
+
+                                if (colorXmedia?.xmediaItems != null &&
+                                    colorXmedia.xmediaItems.Count > 0 &&
+                                    colorXmedia.xmediaItems[0].medias != null)
                                 {
-                                    if (media?.extraInfo?.deliveryUrl != null)
+                                    var medias = colorXmedia.xmediaItems[0].medias;
+
+                                    foreach (var media in medias)
                                     {
-                                        mappedProduct.ImageUrl.Add(media.extraInfo.deliveryUrl);
+                                        if (media?.extraInfo?.deliveryUrl != null)
+                                        {
+                                            mappedProduct.ImageUrl.Add(media.extraInfo.deliveryUrl);
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"BERSHKA MAPPER: Şəkil xətası {product.name} - {ex.Message}");
-                    }
-
-                    // Ölçülər
-                    foreach (var size in firstColor.sizes)
-                    {
-                        if (size != null)
+                        catch (Exception ex)
                         {
-                            mappedProduct.Sizes.Add(new Sizes
+                            Console.WriteLine($"BERSHKA MAPPER: Şəkil xətası {product.name} - {color.name} - {ex.Message}");
+                        }
+
+                        // Ölçülər
+                        foreach (var size in color.sizes)
+                        {
+                            if (size != null)
                             {
-                                SizeName = size.name ?? "",
-                                OnStock = size.isBuyable
-                            });
+                                mappedProduct.Sizes.Add(new Sizes
+                                {
+                                    SizeName = size.name ?? "",
+                                    OnStock = size.isBuyable
+                                });
+                            }
+                        }
+
+                        if (!mappedProducts.Any(x=>x.ProductUrl == mappedProduct.ProductUrl))
+                        {
+                            mappedProducts.Add(mappedProduct);
                         }
                     }
-
-                    mappedProducts.Add(mappedProduct);
                 }
                 catch (Exception ex)
                 {
@@ -130,7 +149,7 @@ namespace ScrapperWebAPI.Helpers.Mappers
                 }
             }
 
-            Console.WriteLine($"BERSHKA MAPPER: {mappedProducts.Count}/{root.products.Count} məhsul map edildi");
+            Console.WriteLine($"BERSHKA MAPPER: {mappedProducts.Count} məhsul map edildi");
             return mappedProducts;
         }
     }
