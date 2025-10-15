@@ -21,5 +21,7 @@ namespace ScrapperWebAPI.Controllers
 
             return Ok(data);
         }
+
+
     }
 }

@@ -56,30 +56,35 @@ namespace ScrapperWebAPI.Helpers
                 // Ignore
             }
         }
-
         public static async Task<List<string>> GetCategoryIds()
         {
             try
             {
                 await WarmUpConnection();
                 await Task.Delay(1000);
-
                 var response = await httpClient.GetAsync("https://www.bershka.com/az/h-man.html");
                 var response1 = await httpClient.GetAsync("https://www.bershka.com/az/h-woman.html");
 
-                if (!response.IsSuccessStatusCode)
+                // HƏR İKİ SORĞU UĞURSUZ OLARSA DAYANDIR
+                if (!response.IsSuccessStatusCode && !response1.IsSuccessStatusCode)
                 {
-                    Console.WriteLine($"BERSHKA: URL açılmadı - {response.StatusCode}");
-                    return new List<string>();
-                }
-                if (!response1.IsSuccessStatusCode)
-                {
-                    Console.WriteLine($"BERSHKA woman: URL açılmadı - {response1.StatusCode}");
+                    Console.WriteLine($"BERSHKA: Hər iki URL açılmadı");
                     return new List<string>();
                 }
 
-                var html = await response.Content.ReadAsStringAsync();
-                var html1 = await response1.Content.ReadAsStringAsync();
+                // BİR SORĞU UĞURSUZ OLARSA DAVAM ET
+                if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"BERSHKA: MAN URL açılmadı - {response.StatusCode}");
+                }
+                if (!response1.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"BERSHKA: WOMAN URL açılmadı - {response1.StatusCode}");
+                }
+
+                var html = response.IsSuccessStatusCode ? await response.Content.ReadAsStringAsync() : "";
+                var html1 = response1.IsSuccessStatusCode ? await response1.Content.ReadAsStringAsync() : "";
+
                 var doc = new HtmlDocument();
                 var doc1 = new HtmlDocument();
                 doc.LoadHtml(html);
@@ -96,10 +101,8 @@ namespace ScrapperWebAPI.Helpers
                     foreach (var link in links)
                     {
                         var href = link.GetAttributeValue("href", "");
-
                         // celement= parametrini tap
                         var match = Regex.Match(href, @"celement=(\d+)");
-
                         if (match.Success)
                         {
                             var categoryId = match.Groups[1].Value;
@@ -107,16 +110,13 @@ namespace ScrapperWebAPI.Helpers
                         }
                     }
                 }
-
                 if (links1 != null)
                 {
                     foreach (var link in links1)
                     {
                         var href = link.GetAttributeValue("href", "");
-
                         // celement= parametrini tap
                         var match = Regex.Match(href, @"celement=(\d+)");
-
                         if (match.Success)
                         {
                             var categoryId = match.Groups[1].Value;
@@ -124,7 +124,6 @@ namespace ScrapperWebAPI.Helpers
                         }
                     }
                 }
-
                 Console.WriteLine($"BERSHKA: {categoryIds.Count} kateqoriya ID-si tapıldı");
                 return categoryIds.ToList();
             }
@@ -134,7 +133,6 @@ namespace ScrapperWebAPI.Helpers
                 return new List<string>();
             }
         }
-
         public static async Task<List<string>> GetAllCategoryLinks()
         {
             var categoryIds = await GetCategoryIds();
