@@ -15,11 +15,12 @@ namespace ScrapperWebAPI.Controllers
         [HttpGet("CategoryIds")]
         public async Task<IActionResult> catid()
         {
-            var categoryNames = await GetBreshkaCategories.GetAllCategoryLinks();
+            var list = new List<int>();
+            list.Add(2088776);
+            var categoryNames = await GetStradivariusCategories.GetAllProductLinks();
 
-            var data = await GetBershkaProducts.FetchProductsAsync(categoryNames);
 
-            return Ok(data);
+            return Ok(categoryNames);
         }
 
 
