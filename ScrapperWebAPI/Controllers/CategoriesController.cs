@@ -93,6 +93,28 @@ public class CategoriesController : ControllerBase
                     store = store
                 });
             }
+            else if (store.ToLower() == "massimo")
+            {
+                categoryNames = await GetMassimoCategories.GetAllProductLinks();
+                dataToSend.Add(new
+                {
+                    name = "test",
+                    type = "test",
+                    img = "test",
+                    store = store
+                });
+            }
+            else if (store.ToLower() == "stradivarius")
+            {
+                categoryNames = await GetStradivariusCategories.GetAllProductLinks();
+                dataToSend.Add(new
+                {
+                    name = "test",
+                    type = "test",
+                    img = "test",
+                    store = store
+                });
+            }
             else
             {
                 return BadRequest("Store not found");
@@ -155,6 +177,19 @@ public class CategoriesController : ControllerBase
                 {
                     
                     var data = await GetBershkaProducts.FetchProductsAsync(categoryNames);
+                    break;
+                }
+                else if (store.ToLower() == "massimo")
+                {
+
+                    var data = await GetMassimoProducts.FetchProductsAsync(categoryNames);
+                    break;
+                }
+
+                else if (store.ToLower() == "stradivarius")
+                {
+
+                    var data = await GetStradivariusProducts.FetchProductsAsync(categoryNames);
                     break;
                 }
 
