@@ -3,7 +3,6 @@ using ScrapperWebAPI.Helpers.Mappers;
 using ScrapperWebAPI.Models.ProductDtos;
 using ScrapperWebAPI.Models.Zara;
 using ScrapperWebAPI.Models.Zara.Product;
-using System.Net.Http;
 using System.Text;
 using ZaraScraperWebApi.Models;
 
@@ -172,7 +171,7 @@ public static class GetZaraProduct
             {
                 name = product.Name ?? "Mehsul",
                 brand = product.Brand ?? "ZARA",
-                price = product.Price/100,
+                price = product.Price / 100,
                 productUrl = product.ProductUrl ?? "",
                 discountedPrice = product.DiscountedPrice,
                 description = !string.IsNullOrEmpty(product.Description) && product.Description.Length > 150
