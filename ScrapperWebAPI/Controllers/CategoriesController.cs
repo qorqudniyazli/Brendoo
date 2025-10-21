@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using ScrapperWebAPI.Helpers;
 using ScrapperWebAPI.Helpers.Product;
 using System.Text;
-using Newtonsoft.Json;
 
 namespace ScrapperWebAPI.Controllers;
 
@@ -83,7 +83,7 @@ public class CategoriesController : ControllerBase
                 }
             }
             else if (store.ToLower() == "bershka")
-            { 
+            {
                 categoryNames = await GetBreshkaCategories.GetAllCategoryLinks();
                 dataToSend.Add(new
                 {
@@ -175,7 +175,7 @@ public class CategoriesController : ControllerBase
                 }
                 else if (store.ToLower() == "bershka")
                 {
-                    
+
                     var data = await GetBershkaProducts.FetchProductsAsync(categoryNames);
                     break;
                 }

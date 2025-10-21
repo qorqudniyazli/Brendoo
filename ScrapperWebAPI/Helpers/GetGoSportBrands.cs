@@ -2,62 +2,61 @@
 using ScrapperWebAPI.Models.BrandDtos;
 using System.Net.Http;
 
-namespace ScrapperWebAPI.Helpers
+namespace ScrapperWebAPI.Helpers;
+
+public static class GetGoSportBrands
 {
-    public static class GetGoSportBrands
+    public async static Task<List<BrandToListDto>> GetAll()
     {
-        public async static Task<List<BrandToListDto>> GetAll()
+        HttpClient _httpClient = new HttpClient();
+        var list = new List<BrandToListDto>();
+
+        for (int page = 1; page <= 6; page++)
         {
-            HttpClient _httpClient = new HttpClient();
-            var list = new List<BrandToListDto>();
+            string url = $"https://www.gosport.az/brands?page={page}";
+            var html = await _httpClient.GetStringAsync(url);
 
-            for (int page = 1; page <= 6; page++)
+            var doc = new HtmlDocument();
+            doc.LoadHtml(html);
+
+            var brandNodes = doc.DocumentNode.SelectNodes("//div[@class='col-md-3 text-center mb-5']/a");
+
+            if (brandNodes != null)
             {
-                string url = $"https://www.gosport.az/brands?page={page}";
-                var html = await _httpClient.GetStringAsync(url);
-
-                var doc = new HtmlDocument();
-                doc.LoadHtml(html);
-
-                var brandNodes = doc.DocumentNode.SelectNodes("//div[@class='col-md-3 text-center mb-5']/a");
-
-                if (brandNodes != null)
+                foreach (var node in brandNodes)
                 {
-                    foreach (var node in brandNodes)
+                    string href = node.GetAttributeValue("href", "");
+                    string name = node.SelectSingleNode(".//h4")?.InnerText.Trim();
+                    string imgUrl = node.SelectSingleNode(".//img")?.GetAttributeValue("src", "");
+
+                    string imageBase64 = null;
+
+                    if (!string.IsNullOrEmpty(imgUrl))
                     {
-                        string href = node.GetAttributeValue("href", "");
-                        string name = node.SelectSingleNode(".//h4")?.InnerText.Trim();
-                        string imgUrl = node.SelectSingleNode(".//img")?.GetAttributeValue("src", "");
-
-                        string imageBase64 = null;
-
-                        if (!string.IsNullOrEmpty(imgUrl))
+                        try
                         {
-                            try
-                            {
-                                var imgBytes = await _httpClient.GetByteArrayAsync(imgUrl);
-                                imageBase64 = Convert.ToBase64String(imgBytes);
-                            }
-                            catch
-                            {
-                                imageBase64 = null;   
-                            }
+                            var imgBytes = await _httpClient.GetByteArrayAsync(imgUrl);
+                            imageBase64 = Convert.ToBase64String(imgBytes);
                         }
-
-                        if (!string.IsNullOrEmpty(href) && !string.IsNullOrEmpty(name))
+                        catch
                         {
-                            list.Add(new BrandToListDto()
-                            {
-                                Name = name,
-                                Type = "brand",
-                                Img = imageBase64
-                            });
+                            imageBase64 = null;   
                         }
+                    }
+
+                    if (!string.IsNullOrEmpty(href) && !string.IsNullOrEmpty(name))
+                    {
+                        list.Add(new BrandToListDto()
+                        {
+                            Name = name,
+                            Type = "brand",
+                            Img = imageBase64
+                        });
                     }
                 }
             }
-            return list;
         }
-
+        return list;
     }
+
 }
