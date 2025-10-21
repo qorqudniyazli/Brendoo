@@ -62,7 +62,7 @@ public static class MassimoProductMapper
                         Price = 0,
                         Sizes = new List<Sizes>(),
                         Colors = new List<ScrapperWebAPI.Models.ProductDtos.Color>(),
-                        Description = detail.description ?? "",
+                        Description = detail.longDescription ?? "",
 
                         // ✅ HƏR RƏNGƏ AID FƏRQLI URL
                         ProductUrl = "https://www.massimodutti.com/az/" +
@@ -138,6 +138,8 @@ public static class MassimoProductMapper
 
                     if (!mappedProducts.Any(x=>x.ProductUrl == mappedProduct.ProductUrl))
                     {
+                        mappedProduct.Colors = new List<Models.ProductDtos.Color>();
+
                         mappedProducts.Add(mappedProduct);
                     }
                 }

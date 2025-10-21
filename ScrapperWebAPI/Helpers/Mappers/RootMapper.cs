@@ -27,10 +27,12 @@ public static class RootMapper
             Price = price,
             DiscountedPrice = null,
             ProductUrl = $"https://www.zara.com/az/ru/{product.seo.keyword}-p{product.seo.seoProductId}.html",
-            Colors = new List<ScrapperWebAPI.Models.ProductDtos.Color>
-            {
-                MapColor(root)
-            },
+            //Colors = new List<ScrapperWebAPI.Models.ProductDtos.Color>
+            //{
+            //    MapColor(root)
+            //},
+            Colors =   new List<Models.ProductDtos.Color>(),
+
             Sizes = MapSizes(root),
             ImageUrl = firstColor?.mainImgs?.Select(img => img.url).ToList() ?? new List<string>()
         };

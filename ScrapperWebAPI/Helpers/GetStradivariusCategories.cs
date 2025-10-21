@@ -60,7 +60,7 @@ public static class GetStradivariusCategories
             await WarmUpConnection();
             await Task.Delay(1000);
 
-            string apiUrl = "https://www.stradivarius.com/itxrest/2/catalog/store/55009626/50109552/category?languageId=-1&typeCatalog=1&appId=1";
+            string apiUrl = "https://www.stradivarius.com/itxrest/2/catalog/store/55009626/50109552/category?languageId=-20&typeCatalog=1&appId=1";
 
             var response = await httpClient.GetAsync(apiUrl);
 
@@ -128,7 +128,7 @@ public static class GetStradivariusCategories
                 {
                     await Task.Delay(500);
 
-                    string apiUrl = $"https://www.stradivarius.com/itxrest/3/catalog/store/55009626/50109552/category/{categoryId}/product?languageId=-1&showProducts=false&priceFilter=true&appId=1";
+                    string apiUrl = $"https://www.stradivarius.com/itxrest/3/catalog/store/55009626/50109552/category/{categoryId}/product?languageId=-20&showProducts=false&priceFilter=true&appId=1";
 
                     Console.WriteLine($"Fetching products for category: {categoryId}");
 
@@ -222,7 +222,7 @@ public static class GetStradivariusCategories
                 {
                     var batch = productIds.Skip(i).Take(batchSize).ToList();
 
-                    string baseLink = $"https://www.stradivarius.com/itxrest/3/catalog/store/55009626/50109552/productsArray?languageId=-1&categoryId={categoryId}&productIds=";
+                    string baseLink = $"https://www.stradivarius.com/itxrest/3/catalog/store/55009626/50109552/productsArray?languageId=-20&categoryId={categoryId}&productIds=";
 
                     string productIdString = string.Join("%2C", batch);
                     string fullLink = baseLink + productIdString + "&appId=1";

@@ -62,7 +62,7 @@ public static class BershkaProductMapper
                         Price = 0,
                         Sizes = new List<Sizes>(),
                         Colors = new List<ScrapperWebAPI.Models.ProductDtos.Color>(),
-                        Description = detail.description ?? "",
+                        Description = detail.longDescription ?? "",
 
                         // ✅ HƏR RƏNGƏ AID FƏRQLI URL
                         ProductUrl = "https://www.bershka.com/az/" +
@@ -138,6 +138,7 @@ public static class BershkaProductMapper
 
                     if (!mappedProducts.Any(x=>x.ProductUrl == mappedProduct.ProductUrl))
                     {
+                        mappedProduct.Colors = new List<Models.ProductDtos.Color>();
                         mappedProducts.Add(mappedProduct);
                     }
                 }
