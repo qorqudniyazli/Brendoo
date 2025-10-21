@@ -103,6 +103,7 @@ public class CustomizableData
 public class Detail
 {
     public string description { get; set; }
+    public string longDescription { get; set; }
     public List<Color> colors { get; set; }
     public List<Xmedium> xmedia { get; set; }
 }

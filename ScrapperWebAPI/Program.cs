@@ -1,7 +1,32 @@
-﻿using ZaraScraperApi.Controllers;
+﻿using System.Runtime.InteropServices;
+using ZaraScraperApi.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
+if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+{
+    Console.OutputEncoding = System.Text.Encoding.UTF8;
+    Console.BackgroundColor = ConsoleColor.DarkBlue;
+    Console.ForegroundColor = ConsoleColor.White;
+    Console.Clear();
+
+    Console.ForegroundColor = ConsoleColor.Cyan;
+    Console.WriteLine("\n\n");
+    Console.WriteLine("    ██████╗ ██████╗ ███████╗██████╗  ██████╗  ██████╗ ");
+    Console.WriteLine("    ██╔══██╗██╔══██╗██╔════╝██╔══██╗██╔═══██╗██╔═══██╗");
+    Console.WriteLine("    ██████╔╝██████╔╝█████╗  ██║  ██║██║   ██║██║   ██║");
+    Console.WriteLine("    ██╔══██╗██╔══██╗██╔══╝  ██║  ██║██║   ██║██║   ██║");
+    Console.WriteLine("    ██████╔╝██║  ██║███████╗██████╔╝╚██████╔╝╚██████╔╝");
+    Console.WriteLine("    ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═════╝  ╚═════╝  ╚═════╝ ");
+
+    Console.ForegroundColor = ConsoleColor.Yellow;
+    Console.WriteLine("\n           ✨ Welcome to Bredoo API ✨\n");
+
+    Console.ForegroundColor = ConsoleColor.Green;
+    Console.WriteLine($"    ⏰ {DateTime.Now:HH:mm:ss} | 🚀 Starting application...\n");
+
+    Console.ResetColor();
+}
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

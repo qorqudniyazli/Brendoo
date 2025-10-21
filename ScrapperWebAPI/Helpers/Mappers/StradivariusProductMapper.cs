@@ -62,10 +62,10 @@ public static class StradivariusProductMapper
                         Price = 0,
                         Sizes = new List<Sizes>(),
                         Colors = new List<ScrapperWebAPI.Models.ProductDtos.Color>(),
-                        Description = detail.description ?? "",
+                        Description = detail.longDescription ?? "",
 
                         // ✅ HƏR RƏNGƏ AID FƏRQLI URL
-                        ProductUrl = "https://www.stradivarius.com/az/" +
+                        ProductUrl = "https://www.stradivarius.com/az/ru/" +
                                    (product.bundleProductSummaries[0].productUrl ?? "") +
                                    $"?colorId={colorCode}",
 
@@ -138,6 +138,7 @@ public static class StradivariusProductMapper
 
                     if (!mappedProducts.Any(x => x.ProductUrl == mappedProduct.ProductUrl))
                     {
+                        mappedProduct.Colors = new List<Models.ProductDtos.Color>();
                         mappedProducts.Add(mappedProduct);
                     }
                 }
