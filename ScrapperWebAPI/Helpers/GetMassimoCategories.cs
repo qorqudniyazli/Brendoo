@@ -53,9 +53,11 @@ public static class GetMassimoCategories
             // Ignore
         }
     }
+
     public static async Task<List<int>> GetCategoryIds()
     {
-        var categoryIds = new List<int>();
+        // *** BU HashSet İSTİFADƏ EDİRİK - DUPLIKAT OLMASIN ***
+        var categoryIds = new HashSet<int>();
 
         try
         {
@@ -70,7 +72,7 @@ public static class GetMassimoCategories
             if (!response.IsSuccessStatusCode)
             {
                 Console.WriteLine($"API Error: {response.StatusCode}");
-                return categoryIds;
+                return categoryIds.ToList();
             }
 
             string jsonContent = await response.Content.ReadAsStringAsync();
@@ -84,36 +86,34 @@ public static class GetMassimoCategories
             {
                 foreach (var category in categories.EnumerateArray())
                 {
-                    // Sadəcə birinci səviyyə subcategories
+                    // *** ƏSAS DƏYİŞİKLİK: Rekursiv funksiya çağırırıq ***
                     if (category.TryGetProperty("subcategories", out JsonElement subcategories))
                     {
-                        foreach (var subcategory in subcategories.EnumerateArray())
-                        {
-                            if (subcategory.TryGetProperty("id", out JsonElement subId))
-                            {
-                                categoryIds.Add(subId.GetInt32());
-                            }
-                        }
+                        ExtractSubcategoryIds(subcategories, categoryIds);
                     }
                 }
             }
 
-            Console.WriteLine($"Total subcategories found: {categoryIds.Count}");
-            return categoryIds;
+            Console.WriteLine($"✅ MASSIMO: Cəmi kateqoriya tapıldı: {categoryIds.Count}");
+            return categoryIds.ToList();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error: {ex.Message}");
-            return categoryIds;
+            Console.WriteLine($"❌ MASSIMO Kateqoriya xətası: {ex.Message}");
+            return categoryIds.ToList();
         }
     }
 
     public static async Task<List<string>> GetProductIds(List<int> categoryIds)
     {
-        var allProductIds = new List<string>();
+        var allProductIds = new HashSet<string>(); // *** DUPLIKAT OLMASIN DEYƏ HashSet ***
+        int processedCategories = 0;
+        int totalCategories = categoryIds.Count;
 
         try
         {
+            Console.WriteLine($"\n🔍 MASSIMO: {totalCategories} kateqoriyadan məhsullar çəkilir...\n");
+
             foreach (var categoryId in categoryIds)
             {
                 try
@@ -122,13 +122,11 @@ public static class GetMassimoCategories
 
                     string apiUrl = $"https://www.massimodutti.com/itxrest/3/catalog/store/35009526/30359534/category/{categoryId}/product?languageId=-20&appId=1&showProducts=false";
 
-                    Console.WriteLine($"Fetching products for category: {categoryId}");
-
                     var response = await httpClient.GetAsync(apiUrl);
 
                     if (!response.IsSuccessStatusCode)
                     {
-                        Console.WriteLine($"API Error for category {categoryId}: {response.StatusCode}");
+                        Console.WriteLine($"⚠️ Kateqoriya {categoryId}: HTTP {response.StatusCode}");
                         continue;
                     }
 
@@ -141,31 +139,41 @@ public static class GetMassimoCategories
                     // productIds array-ni tap
                     if (root.TryGetProperty("productIds", out JsonElement productIds))
                     {
+                        int categoryProductCount = 0;
                         foreach (var productId in productIds.EnumerateArray())
                         {
                             allProductIds.Add(productId.GetInt64().ToString());
+                            categoryProductCount++;
                         }
 
-                        Console.WriteLine($"Category {categoryId}: {productIds.GetArrayLength()} products found");
+                        processedCategories++;
+
+                        // Hər 5 kateqoriyada bir progress göstər
+                        if (processedCategories % 5 == 0 || categoryProductCount > 0)
+                        {
+                            Console.WriteLine($"📊 [{processedCategories}/{totalCategories}] Kateqoriya {categoryId}: {categoryProductCount} məhsul (Cəmi unique: {allProductIds.Count})");
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error processing category {categoryId}: {ex.Message}");
+                    Console.WriteLine($"❌ Kateqoriya {categoryId} xətası: {ex.Message}");
                     continue;
                 }
             }
 
-            // Dublikatları təmizlə
-            var uniqueProductIds = allProductIds.Distinct().ToList();
-            Console.WriteLine($"\nTotal unique products: {uniqueProductIds.Count}");
+            Console.WriteLine($"\n{'=' * 70}");
+            Console.WriteLine($"✅ MASSIMO NƏTİCƏ:");
+            Console.WriteLine($"   Yoxlanılan kateqoriya: {processedCategories}/{totalCategories}");
+            Console.WriteLine($"   Tapılan unique məhsul: {allProductIds.Count}");
+            Console.WriteLine($"{'=' * 70}\n");
 
-            return uniqueProductIds;
+            return allProductIds.ToList();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error: {ex.Message}");
-            return allProductIds;
+            Console.WriteLine($"❌ MASSIMO kritik xəta: {ex.Message}");
+            return allProductIds.ToList();
         }
     }
 
@@ -186,34 +194,34 @@ public static class GetMassimoCategories
 
         try
         {
-            Console.WriteLine("=== Starting Massimo Dutti Scraper ===\n");
+            Console.WriteLine("=== 🚀 MASSIMO DUTTI SCRAPER BAŞLADI ===\n");
 
-            // 1. Category ID-lərini al
-            Console.WriteLine("Step 1: Fetching category IDs...");
+            // 1. Category ID-lərini al (İNDİ REKURSIV ÇƏKƏCƏK)
+            Console.WriteLine("📁 Addım 1: Kateqoriya ID-ləri çəkilir (Rekursiv)...");
             var categoryIds = await GetCategoryIds();
 
             if (categoryIds.Count == 0)
             {
-                Console.WriteLine("No categories found!");
+                Console.WriteLine("⚠️ Heç bir kateqoriya tapılmadı!");
                 return productLinks;
             }
 
-            Console.WriteLine($"Found {categoryIds.Count} categories\n");
+            Console.WriteLine($"✅ {categoryIds.Count} kateqoriya tapıldı\n");
 
             // 2. Product ID-lərini al
-            Console.WriteLine("Step 2: Fetching product IDs from all categories...");
+            Console.WriteLine("🛍️ Addım 2: Hər kateqoriyadan məhsullar çəkilir...");
             var productIds = await GetProductIds(categoryIds);
 
             if (productIds.Count == 0)
             {
-                Console.WriteLine("No products found!");
+                Console.WriteLine("⚠️ Heç bir məhsul tapılmadı!");
                 return productLinks;
             }
 
-            Console.WriteLine($"\nTotal unique products: {productIds.Count}\n");
+            Console.WriteLine($"✅ Cəmi {productIds.Count} unique məhsul tapıldı\n");
 
             // 3. Product ID-ləri 50-lik qruplara böl (API limiti üçün)
-            Console.WriteLine("Step 3: Creating product links...");
+            Console.WriteLine("🔗 Addım 3: Məhsul linkləri yaradılır...");
             int batchSize = 50;
             int totalBatches = (int)Math.Ceiling(productIds.Count / (double)batchSize);
 
@@ -230,20 +238,23 @@ public static class GetMassimoCategories
                 productLinks.Add(fullLink);
 
                 int batchNumber = (i / batchSize) + 1;
-                Console.WriteLine($"Batch {batchNumber}/{totalBatches}: {batch.Count} products");
+                Console.WriteLine($"  📦 Batch {batchNumber}/{totalBatches}: {batch.Count} məhsul");
             }
 
-            Console.WriteLine($"\n=== Completed! Created {productLinks.Count} product links ===");
+            Console.WriteLine($"\n{'=' * 70}");
+            Console.WriteLine($"✅ TAMAMLANDI! {productLinks.Count} məhsul linki yaradıldı");
+            Console.WriteLine($"{'=' * 70}\n");
 
             return productLinks;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in GetAllProductLinks: {ex.Message}");
+            Console.WriteLine($"❌ GetAllProductLinks xətası: {ex.Message}");
             return productLinks;
         }
     }
 
+    // *** BU FUNKSIYA İNDİ IŞLƏYIR - REKURSIV OLARAQ BÜTÜN NESTED KATEQORIYALARI ÇƏKIR ***
     private static void ExtractSubcategoryIds(JsonElement subcategories, HashSet<int> categoryIds)
     {
         foreach (var subcategory in subcategories.EnumerateArray())
@@ -253,7 +264,7 @@ public static class GetMassimoCategories
                 categoryIds.Add(subId.GetInt32());
             }
 
-            // Daha dərin nested subcategories varsa
+            // Daha dərin nested subcategories varsa - REKURSIV ÇAĞIR
             if (subcategory.TryGetProperty("subcategories", out JsonElement nestedSubs))
             {
                 ExtractSubcategoryIds(nestedSubs, categoryIds);
