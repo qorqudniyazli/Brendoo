@@ -115,6 +115,17 @@ public class CategoriesController : ControllerBase
                     store = store
                 });
             }
+            else if (store.ToLower() == "pullandbear")
+            {
+                categoryNames = await GetPullAndBearCategories.GetAllProductLinks();
+                dataToSend.Add(new
+                {
+                    name = "test",
+                    type = "test",
+                    img = "test",
+                    store = store
+                });
+            }
             else
             {
                 return BadRequest("Store not found");
@@ -190,6 +201,12 @@ public class CategoriesController : ControllerBase
                 {
 
                     var data = await GetStradivariusProducts.FetchProductsAsync(categoryNames);
+                    break;
+                }
+                else if (store.ToLower() == "pullandbear")
+                {
+
+                    var data = await GetPullAndBearProducts.FetchProductsAsync(categoryNames);
                     break;
                 }
 
