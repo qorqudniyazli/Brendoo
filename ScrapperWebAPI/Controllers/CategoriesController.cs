@@ -126,6 +126,17 @@ public class CategoriesController : ControllerBase
                     store = store
                 });
             }
+            else if (store.ToLower() == "oysho")
+            {
+                categoryNames = await GetOyshoCategories.GetAllProductLinks();
+                dataToSend.Add(new
+                {
+                    name = "test",
+                    type = "test",
+                    img = "test",
+                    store = store
+                });
+            }
             else
             {
                 return BadRequest("Store not found");
@@ -207,6 +218,12 @@ public class CategoriesController : ControllerBase
                 {
 
                     var data = await GetPullAndBearProducts.FetchProductsAsync(categoryNames);
+                    break;
+                }
+                else if (store.ToLower() == "oysho")
+                {
+
+                    var data = await GetOyshoProducts.FetchProductsAsync(categoryNames);
                     break;
                 }
 
